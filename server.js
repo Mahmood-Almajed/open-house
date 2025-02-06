@@ -45,7 +45,8 @@ app.use(passUserToView)
 const pagesCtrl = require('./controllers/pages')
 const authCtrl = require('./controllers/auth')
 const vipCtrl = require('./controllers/vip')
-const listingCtrl =require('./controllers/listings.controller');
+const listingsCtrl = require('./controllers/listings.controller')
+
 // ROUTE HANDLERS
 app.get('/', pagesCtrl.home)
 app.get('/auth/sign-up', authCtrl.signUp)
@@ -55,17 +56,19 @@ app.post('/auth/sign-in', authCtrl.signIn)
 app.get('/auth/sign-out', authCtrl.signOut)
 app.get('/vip-lounge', isSignedIn, vipCtrl.welcome)
 
-
-app.use(isSignedIn);//must be signed in first to see his/her list 
-
-//listings route
-app.get('/listings',listingCtrl.index);
-app.get('/listings/new',listingCtrl.newListing);
-app.post('/listings',listingCtrl.addList)
-app.get('/listings/:listingId',listingCtrl.show)
-app.delete('/listings/:userId/:listingId',listingCtrl.deleteListing)
-app.get('/listings/:userId/:listingId/edit',listingCtrl.edit);
-app.put('/listings/:userId/:listingId',listingCtrl.update);
-app.listen(port, () => {
+app.use(isSignedIn) // must be signed in to see below routes
+// LISTINGS HANDLERS
+app.get('/listings', listingsCtrl.index)
+app.get('/listings/new', listingsCtrl.newListing)
+// app.post('/listings', listingsCtrl.createListing)
+app.post('/listings/:userId', listingsCtrl.createListing)
+app.get('/listings/:listingId', listingsCtrl.show)
+app.delete('/listings/:userId/:listingId', listingsCtrl.deleteListing)
+app.get('/listings/:userId/:listingId/edit', listingsCtrl.edit)
+app.put('/listings/:userId/:listingId', listingsCtrl.update)
+app.post('/listings/:listingId/favorited-by/:userId', listingsCtrl.addFavorite)
+app.delete('/listings/:listingId/favorited-by/:userId', listingsCtrl.removeFavorite)
+ 
+app.listen(port, () => { 
     console.log(`The express app is ready on port ${port}`)
 })

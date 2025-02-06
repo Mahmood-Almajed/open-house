@@ -1,156 +1,136 @@
-const { render } = require('ejs');
-const Listing = require('../models/listing');
+const Listing = require('../models/listing')
 
-const index  =async(req,res)=>{
-
-    try{
-    const listings = await Listing.find().populate('owner')//find all the owner properties
-    console.log(listings);
-    res.render('listings/index.ejs',{
-        title:"listing",listings
-    });
-
-}
-    catch (error) {
-        console.log(error);
-        res.redirect('/')
-    }
-
-
-
-}
-
-
-const newListing= (req,res)=>{
-
-try{
-    
-    res.render('listings/new.ejs',{
-        title:"Add listing",
-    });
-
-}
-    catch (error) {
-        console.log(error);
-        res.redirect('/')
-    }
-
-
-
-}
-
-const addList = async(req,res)=>{
+const index = async (req, res) => {
     try {
-        req.body.owner=req.session.user._id
-        await Listing.create(req.body);
-        res.redirect('/listings');
-
-
-
-
-
-        
-    } catch (error) {
-        console.log(error);
-        res.redirect('/');
-    }
-
-}
-
-const show =async(req,res)=>{
-try {
-
-    const listing= await Listing.findById(req.params.listingId).populate('owner');
-    console.log(listing);
-    res.render('listings/show.ejs',{title:"Listing",listing})
-
-
-
-} catch (error) {
-    console.log(error);
-    res.redirect('/');
-}
-
-}
-
-
-const deleteListing =async (req,res)=>{
-    try {
-        const listing = await Listing.findById(req.params.listingId)
-        if(listing.owner.equals(req.params.userId)){
-
-            await listing.deleteOne()
-            res.redirect('/listings')
-        }
-        else{
-
-            res.send("You dont have permission to do that");
-        }
-
-
-
-
-    } catch (error) {
-       console.log(error); 
-       res.redirect('/')
-    }
-
-}
-
-
-const edit =async(req,res)=>{
-try {
-    const listing= await Listing.findById(req.params.listingId).populate('owner');
-    if(listing.owner.equals(req.params.userId)){
-        res.render('listings/edit.ejs',{
-            title:`Edit ${listing.streetAddress}`, listing
+        const listings = await Listing.find().populate('owner')
+        res.render('listings/index.ejs', {
+            title: 'Listings',
+            listings: listings,
         })
-         
+    } catch (error) {
+        console.log(error)
+        res.redirect('/')
     }
-    else{
-
-        res.send('You dont have permission to do that');
-    }
-    
-
-} catch (error) {
-    
-    console.log(error);
-    res.redirect('/');
 }
 
-
+const newListing = (req, res) => {
+    res.render('listings/new.ejs', {
+        title: 'Add a Listing'
+    })
 }
 
-
-const update  =async(req,res)=>{
+const createListing = async (req, res) => {
     try {
+        // req.body.owner = req.session.user._id
+        req.body.owner = req.params.userId
+        await Listing.create(req.body)
+        res.redirect('/listings')
+    } catch (error) {
+        console.log(error)
 
-        const listing= await Listing.findByIdAndUpdate(
+    }
+}
+
+const show = async (req, res) => {
+    try {
+        const listing = await Listing.findById(req.params.listingId).populate('owner')
+        
+        const userHasFavorited = listing.favoritedByUsers.some((user) => user.equals(req.session.user._id))
+
+        res.render('listings/show.ejs', {
+            title: listing.streetAddress,
+            listing,
+            userHasFavorited
+        })
+
+    } catch (error) {
+        console.log(error)
+        res.redirect('/')
+    }
+}
+
+const deleteListing = async (req, res) => {
+    try {
+        const listing = await Listing.findById(req.params.listingId) // find the listing
+
+        if (listing.owner.equals(req.params.userId)) { // check if signed in user and listing owner are the same
+            await listing.deleteOne() // delete the listing
+            res.redirect('/listings')
+        } else {
+            res.send("You don't have permission to do that.") // if owner and signed in user are different - send message
+        }
+
+    } catch(error) {
+        console.log(error)
+        res.redirect('/')
+    }
+}
+
+const edit = async (req, res) => {
+    try {
+        const listing = await Listing.findById(req.params.listingId).populate('owner')
+        if(listing.owner.equals(req.params.userId)) {
+            res.render('listings/edit.ejs', {
+                title: `Edit ${listing.streetAddress}`,
+                listing
+            })
+        } else {
+            res.send("You don't have permission to do that.") // if owner and signed in user are different - send message
+        }
+    } catch (error) {
+        console.log(error)
+        res.redirect('/')
+    }
+}
+
+const update = async (req, res) => {
+    try {
+        const listing = await Listing.findByIdAndUpdate(
             req.params.listingId,
             req.body,
-            {new:true}
-        );
-        
-        res.redirect(`/listings/${req.params.listingId}`);
-        
+            { new: true }
+        )
+        res.redirect(`/listings/${listing._id}`)
     } catch (error) {
-        console.log(error);
-        res.redirect('/');
+        console.log(error)
+        res.redirect('/')
     }
-
-
 }
 
+const addFavorite = async (req, res) => {
+    try {
+        const listing = await Listing.findByIdAndUpdate(req.params.listingId, {
+            $push: { favoritedByUsers: req.params.userId }
+        })
+        res.redirect(`/listings/${listing._id}`)
+       
+    } catch (error) {
+        console.log(error)
+        res.redirect('/')
+    }
+}
 
+const removeFavorite = async (req, res) => {
+    try {
+        const listing = await Listing.findByIdAndUpdate(req.params.listingId, {
+            $pull: { favoritedByUsers: req.params.userId }
+        })
+        res.redirect(`/listings/${listing._id}`)
+       
+    } catch (error) {
+        console.log(error)
+        res.redirect('/')
+    }
+}
 
-module.exports ={
-
+module.exports = {
     index,
     newListing,
-    addList,
+    createListing,
     show,
     deleteListing,
     edit,
     update,
+    addFavorite,
+    removeFavorite,
 }
