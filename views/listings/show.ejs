@@ -1,0 +1,44 @@
+<%- include('../partials/head') %>
+
+    <div class="container">
+
+        <h1>Here's all the listings</h1>
+
+
+
+        <div class="card mt-2" style="width: 40vw;">
+            <img src="<%= listing.imageUrl %>"
+                class="card-img-top" alt="...">
+            <div class="card-body">
+                <h5 class="card-title">Price:$<%= listing.price %>
+                </h5>
+                <p class="card-text">
+                    <%= listing.streetAddress %>,<%= listing.city %>
+                </p>
+                <p class="card-text">
+                    <%= listing.size %>
+                </p>
+                <p class="card-text">listed by :<%= listing.owner.username ||"uknown" %>
+                </p>
+                <a href="/listings" class="btn btn-primary">Go Back</a>
+                <% if (listing.owner._id.equals(user._id)) { %>
+                    <form action="/listings/<%=user._id %>/<%=listing._id %>?_method=DELETE" method="POST">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+
+                    <a href="/listings/<%= user._id %>/<%= listing._id %>/edit"> Edit this list </a>
+                <% } %>
+                
+            </div>
+
+        </div>
+
+
+
+
+
+
+    </div>
+
+
+    <%- include('../partials/footer') %>
